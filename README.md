@@ -1,5 +1,5 @@
-MobileShuffle: An Efficient CNN Architecture for Spaceborne SAR Scene Classification
-![image](https://github.com/user-attachments/assets/43f282b7-eb55-44cc-9185-5e75f31c63b6)
+新手友好的MobileShuffle SAR图像分类实现
 
-![image](https://github.com/user-attachments/assets/8e1ef963-c316-4615-9507-317af68cc265)
+原项目地址: https://github.com/2474137474/MobileShuffle
 
+下载数据集: https://emwlab.fudan.edu.cn/67/05/c20899a222981/page.htm

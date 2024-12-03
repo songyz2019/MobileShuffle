@@ -10,8 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-__all__ = ['mobileshuffle','MobileShuffleBlock','reparameterize_model']
-
 def channel_shuffle(x, groups):
     """channel shuffle operation
     Args:
@@ -74,7 +72,6 @@ class SEBlock(nn.Module):
         x = torch.sigmoid(x)
         x = x.view(-1, c, 1, 1)
         return inputs * x
-
 
 class MobileShuffleUnit(nn.Module):
     def __init__(self, channels, stride, num_conv_branches, use_se, inference_mode):
@@ -344,7 +341,6 @@ class MobileShuffleBlock(nn.Module):
         mod_list.add_module('bn', nn.BatchNorm2d(num_features=self.out_channels))
         return mod_list
 
-
 class MobileShuffle(nn.Module):
     def __init__(self,
                 num_classes: int = 1000,
@@ -423,86 +419,27 @@ class MobileShuffle(nn.Module):
         return x
 
 
-PARAMS = {
-    "s0": {"width_multipliers": (1.0, 1.0, 1.0, 1.0),
-           "num_conv_branches": 4, "num_blocks_per_stage": [2,8,10,1],
-           "use_se": True},
-    "s1": {"width_multipliers": (1.5, 1.5, 1.5, 1.5),
-           "num_conv_branches": 4, "num_blocks_per_stage": [2,4,6,1],
-           "use_se": True},
-    "s2": {"width_multipliers": (2.0, 2.0, 2.0, 2.0),
-           "num_conv_branches": 4, "num_blocks_per_stage": [2,4,6,1],
-           "use_se": True},
-    "s3": {"width_multipliers": (3.0, 3.0, 3.0, 3.0),
-           "num_conv_branches": 4, "num_blocks_per_stage": [2,4,6,1],
-           "use_se": True},
-    "s4": {"width_multipliers": (4.0, 4.0, 4.0, 4.0),
-            "num_conv_branches": 4, "num_blocks_per_stage": [2,4,6,1],
-           "use_se": True},
-}
-
-
-def mobileshuffle(num_classes: int = 1000, inference_mode: bool = False,
-              variant: str = "s0") -> nn.Module:
-    variant_params = PARAMS[variant]
-    return MobileShuffle(num_classes=num_classes,
-                         inference_mode=inference_mode,
-                        **variant_params)
-
-
-def reparameterize_model(model: torch.nn.Module) -> nn.Module:
-    """ Method returns a model where a multi-branched structure
-        used in training is re-parameterized into a single branch
-        for inference.
-
-    :param model: MobileOne model in train mode.
-    :return: MobileOne model in inference mode.
-    """
-    # Avoid editing original graph
-    model = copy.deepcopy(model)
-    for module in model.modules():
-        if hasattr(module, 'reparameterize'):
-            module.reparameterize()
-    return model
-
-if __name__ == '__main__':
-    import torch
-
-    model = mobileshuffle(variant="s0", inference_mode=False, num_classes=100)
-    # print(model)
-    # random_input = torch.randn(1,3,224,224)
-    # output = model(random_input)
-    # print(output.shape)
-    #
-    # 注意，证明训练与推理一致时，不要使用thop库，会像模型添加一些统计参数量、计算量的属性
-    # # 计算该网络的参数量
-    # from thop import profile
-    # from thop import clever_format
-    # flops, params = profile(model, inputs=(random_input, ))
-    # flops, params = clever_format([flops, params], "%.3f")
-    # print(flops, params)
-
-
-
-
-    # # 保存训练时权重
-    # torch.save(model.state_dict(), "mobileshuffle-train.pth")
-    # # 保存推理时权重
-    # inference_model = reparameterize_model(model)
-    # torch.save(inference_model.state_dict(), "mobileshuffle-inference.pth")
-
-
-
-    # 证明训练权重与推理权重得到的结果相同
-    model.load_state_dict(torch.load("mobileshuffle-train.pth"))
-    inference_model = mobileshuffle(variant="s0", inference_mode=True, num_classes=100)
-    inference_model.load_state_dict(torch.load("mobileshuffle-inference.pth"))
-
-    model.eval(); inference_model.eval()
-
-    input = torch.randn(1,3,224,224)
-    out_train = model(input)
-    out_inference = inference_model(input)
-    print(torch.sum(out_train, dim=1))
-    print(torch.sum(out_inference,dim=1))
-
+# def mobileshuffle(num_classes: int = 1000, inference_mode: bool = False,
+#               variant: str = "s0") -> nn.Module:
+#     PARAMS = {
+#         "s0": {"width_multipliers": (1.0, 1.0, 1.0, 1.0),
+#                "num_conv_branches": 4, "num_blocks_per_stage": [2, 8, 10, 1],
+#                "use_se": True},
+#         "s1": {"width_multipliers": (1.5, 1.5, 1.5, 1.5),
+#                "num_conv_branches": 4, "num_blocks_per_stage": [2, 4, 6, 1],
+#                "use_se": True},
+#         "s2": {"width_multipliers": (2.0, 2.0, 2.0, 2.0),
+#                "num_conv_branches": 4, "num_blocks_per_stage": [2, 4, 6, 1],
+#                "use_se": True},
+#         "s3": {"width_multipliers": (3.0, 3.0, 3.0, 3.0),
+#                "num_conv_branches": 4, "num_blocks_per_stage": [2, 4, 6, 1],
+#                "use_se": True},
+#         "s4": {"width_multipliers": (4.0, 4.0, 4.0, 4.0),
+#                "num_conv_branches": 4, "num_blocks_per_stage": [2, 4, 6, 1],
+#                "use_se": True},
+#     }
+#     variant_params = PARAMS[variant]
+#     return MobileShuffle(num_classes=num_classes,
+#                          inference_mode=inference_mode,
+#                         **variant_params)
+#
